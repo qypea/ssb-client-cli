@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander')
-var Connection = require('..')
+var Connection = require('ssb-client')
 var pull = require('pull-stream')
 
 function parseRange (str) {

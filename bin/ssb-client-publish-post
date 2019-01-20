@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander')
-var Connection = require('..')
+var Connection = require('ssb-client')
 
 program
   .option('--text <str>', 'Post message in markdown. Be sure to quote for command line')

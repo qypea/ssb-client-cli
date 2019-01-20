@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander')
-var Connection = require('..')
+var Connection = require('ssb-client')
 
 program
   .option('-j, --json', 'Print output in full json instead of just the id')

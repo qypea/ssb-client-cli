@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 var program = require('commander')
-var Connection = require('..')
+var Connection = require('ssb-client')
 
 program
   .option('--contact <hash>', 'Person to follow or block')
