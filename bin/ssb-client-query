@@ -1,0 +1,180 @@
+#!/usr/bin/env node
+
+var program = require('commander')
+var Connection = require('ssb-client')
+var pull = require('pull-stream')
+
+function parseRange (str) {
+  const split = str.split('..')
+  if (split.length === 1) {
+    return parseInt(split[0])
+  } else if (split.length === 2) {
+    return {
+      '$gte': parseInt(split[0]),
+      '$lte': parseInt(split[1])
+    }
+  } else {
+    return NaN
+  }
+}
+
+program
+  .option('--key <hash>', 'Message hash')
+  .option('--type <str>', 'Message type')
+  .option('--author <hash>', 'Author of the message')
+  .option('--sequence <int>', 'Sequence number(Ranges supported: 5..6)', parseRange)
+  .option('--timestamp <int>', 'Time message was written(Ranges supported: 15000..16000)', parseRange)
+  .option('--head <int>', 'Output only the first N messages', parseInt)
+  .option('--tail <int>', 'Output only the last N messages', parseInt)
+  // Post messages
+  .option('--channel <str>', 'Channel the message was posted to')
+  .option('--root <hash>', 'Thread the message was posted to')
+  .option('--branch <hash>', 'Thread-branch this message was posted to')
+  // About messages
+  .option('--about <hash>', 'Who the message is about')
+  .option('--name <str>', 'About messages setting the name to the specified value')
+  .option('--image <hash>', 'About messages setting the image to the specified value')
+  // Contact messages
+  .option('--contact <hash>', 'Person being followed or blocked')
+  .option('--action <verb>', 'Action being applied(follow, unfollow, block, unblock)',
+    /^(follow|unfollow|block|unblock)$/i)
+  // Vote messages
+  .option('--link <hash>', 'Person, message, channel, etc being voted on')
+  .option('--value <-1,0,1>', 'Value of vote(1 is positive, -1 is negative)', parseInt)
+  .option('--reason <text>', 'Reason for the vote')
+  .parse(process.argv)
+
+if (program.rawArgs.length <= 2) {
+  console.log('Must specify at least one filter option')
+  program.help()
+}
+
+Connection((err, server) => {
+  if (err) {
+    throw err
+  }
+
+  var filter = {
+    value: {
+      content: {}
+    }
+  }
+
+  if (typeof program.key === 'string') {
+    filter['key'] = program.key
+  }
+  if (typeof program.type === 'string') {
+    filter['value']['content']['type'] = program.type
+  }
+  if (typeof program.author === 'string') {
+    filter['value']['author'] = program.author
+  }
+  if (typeof program.sequence === 'number' || typeof program.sequence === 'object') {
+    filter['value']['sequence'] = program.sequence
+  }
+  if (typeof program.timestamp === 'number' || typeof program.timestamp === 'object') {
+    filter['value']['timestamp'] = program.timestamp
+  }
+  if (typeof program.channel === 'string') {
+    filter['value']['content']['channel'] = program.channel
+  }
+  if (typeof program.root === 'string') {
+    filter['value']['content']['root'] = program.root
+  }
+  if (typeof program.branch === 'string') {
+    filter['value']['content']['branch'] = program.branch
+  }
+  if (typeof program.about === 'string') {
+    filter['value']['content']['about'] = program.about
+  }
+  if (typeof program.name === 'string') {
+    filter['value']['content']['name'] = program.name
+  }
+  if (typeof program.image === 'string') {
+    filter['value']['content']['image'] = program.image
+  }
+  if (typeof program.contact === 'string') {
+    filter['value']['content']['contact'] = program.contact
+  }
+  if (program.action !== undefined && typeof program.action === 'string') {
+    switch (program.action) {
+      case 'follow':
+        filter['value']['content']['following'] = true
+        break
+      case 'unfollow':
+        filter['value']['content']['following'] = false
+        break
+      case 'block':
+        filter['value']['content']['blocking'] = true
+        break
+      case 'unblock':
+        filter['value']['content']['blocking'] = false
+        break
+      default:
+        throw Object('Unsupported action')
+    }
+  }
+  if (typeof program.link === 'string') {
+    if (filter['value']['content']['vote'] === undefined) {
+      filter['value']['content']['vote'] = {}
+    }
+    filter['value']['content']['vote']['link'] = program.link
+  }
+  if (program.value !== undefined) {
+    if (filter['value']['content']['vote'] === undefined) {
+      filter['value']['content']['vote'] = {}
+    }
+    filter['value']['content']['vote']['value'] = program.value
+  }
+  if (typeof program.reason === 'string') {
+    if (filter['value']['content']['vote'] === undefined) {
+      filter['value']['content']['vote'] = {}
+    }
+    filter['value']['content']['vote']['reason'] = program.reason
+  }
+
+  function onDone (err, msgs) {
+    if (err) {
+      server.close()
+      throw err
+    }
+
+    console.log(JSON.stringify(msgs, null, 2))
+    server.close()
+  }
+
+  if (typeof program.head === 'number') {
+    // Take only the first N
+    pull(
+      server.query.read({
+        query: [{
+          $filter: filter
+        }]
+      }),
+      pull.take(program.head),
+      pull.collect(onDone)
+    )
+  } else if (typeof program.tail === 'number') {
+    // Take only the last N
+    pull(
+      server.query.read({
+        reverse: true,
+        query: [{
+          $filter: filter
+        }]
+      }),
+      pull.take(program.tail),
+      pull.collect(onDone)
+    )
+  } else {
+    // Standard -- take all
+    pull(
+      server.query.read({
+        query: [{
+          $filter: filter
+        }]
+      }),
+      pull.collect(onDone)
+    )
+  }
+})

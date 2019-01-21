@@ -1,0 +1,24 @@
+{
+    "name": "ssb-client-cli",
+    "version": "1.0.0",
+    "license": "MIT",
+    "description": "Basic command line for SSBC, using ssb-client library",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/qypea/ssb-client-cli"
+    },
+    "dependencies": {
+        "ssb-client": "^4.6.0",
+        "commander": "^2.19.0"
+    },
+    "bin": {
+        "ssb-client": "./bin/ssb-client",
+        "ssb-client-publish": "./bin/ssb-client-publish",
+        "ssb-client-publish-about": "./bin/ssb-client-publish-about",
+        "ssb-client-publish-contact": "./bin/ssb-client-publish-contact",
+        "ssb-client-publish-post": "./bin/ssb-client-publish-post",
+        "ssb-client-publish-vote": "./bin/ssb-client-publish-vote",
+        "ssb-client-query": "./bin/ssb-client-query",
+        "ssb-client-whoami": "./bin/ssb-client-whoami"
+    }
+}

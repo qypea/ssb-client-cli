@@ -1,0 +1,52 @@
+#!/usr/bin/env node
+
+var program = require('commander')
+var Connection = require('ssb-client')
+
+program
+  .option('--name <str>', 'Set your name')
+  .option('--description <str>', 'Set your description in markdown. Be sure to quote for command line')
+  .option('--image <hash>', 'Set your profile image. See "blob add" to add the image, get the hash')
+  .parse(process.argv)
+
+if (program.rawArgs.length <= 2) {
+  program.help()
+}
+
+Connection((err, server) => {
+  if (err) {
+    throw err
+  }
+
+  server.whoami((err, keys) => {
+    if (err) {
+      server.close()
+      throw err
+    } else {
+      var message = {
+        type: 'about',
+        about: keys['id']
+      }
+
+      if (typeof program.name === 'string') {
+        message['name'] = program.name
+      }
+      if (typeof program.description === 'string') {
+        message['description'] = program.description
+      }
+      if (typeof program.image === 'string') {
+        message['image'] = program.image
+      }
+
+      server.publish(message, (err) => {
+        console.log(message)
+        server.close()
+        if (err) {
+          throw err
+        }
+      })
+    }
+
+    server.close()
+  })
+})
