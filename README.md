@@ -40,6 +40,8 @@ ssb-client publish post --help
 ssb-client query --help
 ```
 
+For connecting json with scripts I highly recommend the [jq utility](https://stedolan.github.io/jq/)
+
 ## Contributing
 If you find bugs feel free to report them as issues on this repo or fix them and PR your fixes. If you'd like to add functionality feel free to make PRs and I'll review them.
 
