@@ -26,6 +26,7 @@ program
   .option('--timestamp <int>', 'Time message was written(Ranges supported: 15000..16000)', parseRange)
   .option('--head <int>', 'Output only the first N messages', parseInt)
   .option('--tail <int>', 'Output only the last N messages', parseInt)
+  .option('--mentions <hash>', 'Messages which mention the specified hash')
   // Post messages
   .option('--channel <str>', 'Channel the message was posted to')
   .option('--root <hash>', 'Thread the message was posted to')
@@ -131,6 +132,9 @@ Connection((err, server) => {
       filter['value']['content']['vote'] = {}
     }
     filter['value']['content']['vote']['reason'] = program.reason
+  }
+  if (typeof program.mentions === 'string') {
+    filter['value']['content']['mentions'] = [{ link: program.mentions }]
   }
 
   function onDone (err, msgs) {
